@@ -1,3 +1,4 @@
+# matches fts (FAST BRIEF) from 2 consec images 
 from pathlib import Path 
 import cv2
 
