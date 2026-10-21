@@ -11,6 +11,8 @@ from pathlib import Path # Object Oriented filesystem paths
     # easier to use path - no more long string
     # also has glob built in - recurisve 
 import cv2 # openCV -> open source computer vision lib -> CV, image proc, ML. treats imgs/vids as multidim NumPy arrays 
+import numpy as np
+
 
 folder = Path("data/rgbd_dataset_freiburg1_xyz/rgb")
 images = sorted(folder.glob("*.png")) 
@@ -19,16 +21,68 @@ images = sorted(folder.glob("*.png"))
 if not images: 
     raise FileNotFoundError("Error loading dataset images")
 
+# set up objs
+orb = cv2.ORB_create(nfeatures=1000)
+bf=cv2.BFMatcher(cv2.NORM_HAMMING) # for hamming dist
+failed_pairs = []
 first_ten_images = images[:10]
+MINIMUM_MATCHES = 8000
+
 for i in range(1, len(first_ten_images)): 
-    img1 = cv2.imread(first_ten_images[i-1])
-    img2 = cv2.imread(first_ten_images[i])
+    img1 = cv2.imread(str(first_ten_images[i-1])) # using str avoid compat issues with diff cv versions
+    img2 = cv2.imread(str(first_ten_images[i]))
     if img1 is None or img2 is None: 
-        raise RuntimeError("Could not load current_iamge")
+        failed_pairs.append((first_ten_images[i-1], first_ten_images[i]))
+        print("Warning: one or two images could not load")
+        continue
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-    orb = cv2.ORB_create(nfeatures=1000)
     kp1, des1 = orb.detectAndCompute(gray1, None)
     kp2, des2 = orb.detectAndCompute(gray2, None)
-    print(f"Matching frame {first_ten_images[i-1].name} with {first_ten_images[i].name}")
 
+    if des1 is None or des2 is None:
+        print("Warning: one or two ORB descriptors could not be loaded.")
+        failed_pairs.append((first_ten_images[i-1], first_ten_images[i]))
+        continue
+
+    pairs = bf.knnMatch(des1, des2, k=2) # find 2 nearest matches for descriptors 
+
+    # lowe's ratio test to filter out weak 
+    good_matches = [] 
+    frame1_matches = []
+    frame2_matches = []
+
+    ratio_test_threshold = 0.75
+    for pair in pairs: 
+        if len(pair)==2: 
+            best, second_best = pair
+            if best.distance < ratio_test_threshold * second_best.distance: 
+                good_matches.append(best)
+                frame1_matches.append(kp1[best.queryIdx].pt)
+                frame2_matches.append(kp2[best.trainIdx].pt)
+
+    if len(good_matches) < MINIMUM_MATCHES: 
+        print(f"Warning: Less than {MINIMUM_MATCHES} good matches found")
+        failed_pairs.append((first_ten_images[i-1], first_ten_images[i]))
+        print(f"Frame {i} -> Frame {i+1}")
+        print(f"Good matches: {len(good_matches)}")
+        print(f"Status: SKIPPED (insufficent matches)")
+        continue
+
+    frame1_matches = np.array(frame1_matches, dtype=np.float32)
+    frame2_matches = np.array(frame2_matches, dtype=np.float32)
+
+    #verification
+    assert frame1_matches.shape == frame2_matches.shape 
+    assert frame1_matches.shape[1] == 2
+
+    print(f"Frame {i} -> Frame {i+1}")
+    print(f"Keypoints: {len(kp1)} -> {len(kp2)}")
+    print(f"Good matches: {len(good_matches)}")
+    print(f"Percentage: {len(good_matches)/len(kp1) : .1%}")
+    print(f"Points shape: {frame1_matches.shape}")
+    print(f"Status: OK")
+
+            
+        
+        
