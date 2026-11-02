@@ -4,11 +4,10 @@
 import numpy as np
 f_x, f_y, c_x, c_y = 517.3,516.5,318.6,255.3
 
-k=[[f_x, 0, c_x],
+K=np.array([[f_x, 0, c_x],
    [0,f_y,c_y], 
    [0,0,1]
-   ]
-K = np.array(k, dtype=np.float64)
+   ], dtype=np.float64)
 
 print(f"Camera intrisic matric K: {K}")
 
