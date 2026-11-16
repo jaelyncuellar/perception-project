@@ -12,4 +12,10 @@ This project uses Python and OpenCV to analyze phone-camera video and progressiv
 
 - Accurate calibration is important for visual odometry because focal lengths & principal determine how 3D points are projected onto the image plane. Incorrect parameters can introduce errors when estimating camera rotation & translation from matched features.
 
-- Lens distortion matters because real cameras can cause image points to appear at positions different from those predicted by the ideal pinhole camera model. Distortion changes pixel positions and affects feature correspondences. Accounting for distortion helps improve the accuracy of geometric calculations and camera motion estimation. 
+- Lens distortion matters because real cameras can cause image points to appear at positions different from those predicted by the ideal pinhole camera model. Distortion changes pixel positions and affects feature correspondences. Accounting for distortion helps improve the accuracy of geometric calculations and camera motion estimation.
+
+## Portfolio media
+
+The [case study on jaelyncuellar.com](https://jaelyncuellar.com/projects/perception-project) uses this ORB keypoints image, kept in this repo so the GitHub and portfolio visuals match:
+
+![ORB keypoints - portfolio version](docs/portfolio/perception-orb.webp)
